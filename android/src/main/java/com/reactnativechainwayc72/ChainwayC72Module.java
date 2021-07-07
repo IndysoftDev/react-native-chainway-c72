@@ -73,7 +73,7 @@ public class ChainwayC72Module extends ReactContextBaseJavaModule implements Lif
     }
 
     @ReactMethod
-    public void initializeReader(Promise promise) {
+    public void initReader(Promise promise) {
         try {
             connect();
             promise.resolve(true);
@@ -83,10 +83,23 @@ public class ChainwayC72Module extends ReactContextBaseJavaModule implements Lif
     }
 
     @ReactMethod
-    public void deinitializeReader(Promise promise) {
+    public void deinitReader(Promise promise) {
         try {
             disconnect();
             promise.resolve(true);
+        } catch (Exception err) {
+            promise.reject(err);
+        }
+    }
+
+    @ReactMethod
+    public void isReaderInit(Promise promise) {
+        try {
+            if (mReader != null) {
+                promise.resolve(mReader.getConnectStatus() == ConnectionStatus.CONNECTED);
+            } else {
+                promise.resolve(false);
+            }
         } catch (Exception err) {
             promise.reject(err);
         }
