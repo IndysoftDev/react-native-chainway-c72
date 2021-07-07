@@ -4,10 +4,13 @@ import { StyleSheet, View, Text } from 'react-native';
 import ChainwayC72 from 'react-native-chainway-c72';
 
 export default function App() {
-  const [result, setResult] = React.useState<number | undefined>();
+  const [result, setResult] = React.useState<boolean>();
 
   React.useEffect(() => {
-    ChainwayC72.multiply(3, 7).then(setResult);
+    ChainwayC72.isReaderInit().then((res) => {
+      console.log(res);
+      setResult(res);
+    });
   }, []);
 
   return (
