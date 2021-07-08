@@ -23,13 +23,6 @@ public class ChainwayC72Module extends ReactContextBaseJavaModule implements Lif
 
     private RFIDWithUHFUART mReader;
 
-    private static final String UHF_READER_POWER_ON_ERROR = "UHF_READER_POWER_ON_ERROR";
-    private static final String UHF_READER_INIT_ERROR = "UHF_READER_INIT_ERROR";
-    private static final String UHF_READER_READ_ERROR = "UHF_READER_READ_ERROR";
-    private static final String UHF_READER_RELEASE_ERROR = "UHF_READER_RELEASE_ERROR";
-    private static final String UHF_READER_WRITE_ERROR = "UHF_READER_WRITE_ERROR";
-    private static final String UHF_READER_OTHER_ERROR = "UHF_READER_OTHER_ERROR";
-
     public ChainwayC72Module(ReactApplicationContext reactContext) {
         super(reactContext);
         this.reactContext = reactContext;
