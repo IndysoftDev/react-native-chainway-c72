@@ -19,8 +19,9 @@ export default function App() {
       console.log(keyEvent);
     });
     // if you want to react to keyUp
-    KeyEvent.onKeyUpListener((keyEvent: any) => {
-      console.log(keyEvent);
+    KeyEvent.onKeyUpListener(async () => {
+      const tag = await ChainwayC72.readSingleTag();
+      console.log(tag.rssi);
     });
   }, []);
 

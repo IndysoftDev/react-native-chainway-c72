@@ -8,10 +8,11 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.module.annotations.ReactModule;
 import com.facebook.react.bridge.LifecycleEventListener;
-import com.facebook.react.bridge.WritableNativeMap;
-
+import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.bridge.Arguments;
 
 import com.rscja.deviceapi.RFIDWithUHFUART;
+import com.rscja.deviceapi.entity.UHFTAGInfo;
 import com.rscja.deviceapi.interfaces.ConnectionStatus;
 import com.rscja.deviceapi.exception.ConfigurationException;
 
@@ -21,6 +22,13 @@ public class ChainwayC72Module extends ReactContextBaseJavaModule implements Lif
     private final ReactApplicationContext reactContext;
 
     private RFIDWithUHFUART mReader;
+
+    private static final String UHF_READER_POWER_ON_ERROR = "UHF_READER_POWER_ON_ERROR";
+    private static final String UHF_READER_INIT_ERROR = "UHF_READER_INIT_ERROR";
+    private static final String UHF_READER_READ_ERROR = "UHF_READER_READ_ERROR";
+    private static final String UHF_READER_RELEASE_ERROR = "UHF_READER_RELEASE_ERROR";
+    private static final String UHF_READER_WRITE_ERROR = "UHF_READER_WRITE_ERROR";
+    private static final String UHF_READER_OTHER_ERROR = "UHF_READER_OTHER_ERROR";
 
     public ChainwayC72Module(ReactApplicationContext reactContext) {
         super(reactContext);
@@ -102,6 +110,25 @@ public class ChainwayC72Module extends ReactContextBaseJavaModule implements Lif
             }
         } catch (Exception err) {
             promise.reject(err);
+        }
+    }
+
+    @ReactMethod
+    public void readSingleTag(final Promise promise) {
+        try {
+            UHFTAGInfo tag = mReader.inventorySingleTag();
+
+            if(tag != null) {
+                WritableMap map = Arguments.createMap();
+                map.putString("epc", tag.getEPC());
+                map.putString("rssi", tag.getRssi());
+                promise.resolve(map);
+            } else {
+                promise.reject("READ_ERROR", "READ FAILED");
+            }
+
+        } catch (Exception ex) {
+            promise.reject("READ_ERROR", ex);
         }
     }
 
