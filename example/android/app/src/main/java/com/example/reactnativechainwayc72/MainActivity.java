@@ -2,6 +2,9 @@ package com.example.reactnativechainwayc72;
 
 import com.facebook.react.ReactActivity;
 
+import android.view.KeyEvent; // <--- import
+import com.github.kevinejohn.keyevent.KeyEventModule; // <--- import
+
 public class MainActivity extends ReactActivity {
 
   /**
@@ -61,9 +64,9 @@ public class MainActivity extends ReactActivity {
     return true;
   }
 
-  @Override
-  public boolean onKeyMultiple(int keyCode, int repeatCount, KeyEvent event) {
-    KeyEventModule.getInstance().onKeyMultipleEvent(keyCode, repeatCount, event);
-    return super.onKeyMultiple(keyCode, repeatCount, event);
-  }
+   @Override
+    public boolean onKeyMultiple(int keyCode, int repeatCount, KeyEvent event) {
+        KeyEventModule.getInstance().onKeyMultipleEvent(keyCode, repeatCount, event);
+        return super.onKeyMultiple(keyCode, repeatCount, event);
+    }
 }
