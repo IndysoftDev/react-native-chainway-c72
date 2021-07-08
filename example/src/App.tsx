@@ -2,14 +2,25 @@ import * as React from 'react';
 
 import { StyleSheet, View, Text } from 'react-native';
 import ChainwayC72 from 'react-native-chainway-c72';
+import KeyEvent from 'react-native-keyevent';
 
 export default function App() {
   const [result, setResult] = React.useState<boolean>();
 
   React.useEffect(() => {
-    ChainwayC72.isReaderInit().then((res) => {
+    ChainwayC72.initReader().then((res) => {
       console.log(res);
       setResult(res);
+    });
+  }, []);
+
+  React.useEffect(() => {
+    KeyEvent.onKeyDownListener((keyEvent: any) => {
+      console.log(keyEvent);
+    });
+    // if you want to react to keyUp
+    KeyEvent.onKeyUpListener((keyEvent: any) => {
+      console.log(keyEvent);
     });
   }, []);
 
