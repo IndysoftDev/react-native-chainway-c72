@@ -125,4 +125,31 @@ public class ChainwayC72Module extends ReactContextBaseJavaModule implements Lif
         }
     }
 
+    @ReactMethod
+    public void readPower(final Promise promise) {
+        try {
+            int uhfPower = mReader.getPower();
+            if(uhfPower>=0) {
+                promise.resolve(uhfPower);
+            } else {
+                promise.reject("POWER_ERROR", "INVALID POWER VALUE");
+            }
+        } catch (Exception ex) {
+            promise.reject("POWER_ERROR", ex.getLocalizedMessage());
+        }
+    }
+
+    @ReactMethod
+    public void setPower(int powerValue, final Promise promise) {
+        try {
+            Boolean uhfPowerState = mReader.setPower(powerValue);
+            if(uhfPowerState)
+                promise.resolve(uhfPowerState);
+            else
+                promise.reject("POWER_ERROR", "Can't Change Power");
+        } catch (Exception ex) {
+            promise.reject("POWER_ERROR", ex.getLocalizedMessage());
+        }
+    }
+
 }
