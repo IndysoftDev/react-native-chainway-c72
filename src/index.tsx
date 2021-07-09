@@ -31,4 +31,6 @@ export default {
   deinitReader,
   isReaderInit,
   readSingleTag,
+  readPower,
+  setPower,
 };
