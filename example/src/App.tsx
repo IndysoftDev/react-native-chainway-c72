@@ -6,6 +6,7 @@ import KeyEvent from 'react-native-keyevent';
 
 export default function App() {
   const [result, setResult] = React.useState<boolean>();
+  const [power, setPower] = React.useState<number>();
 
   const readTag = async () => {
     try {
@@ -26,6 +27,12 @@ export default function App() {
   }, []);
 
   React.useEffect(() => {
+    ChainwayC72.readPower().then((res) => {
+      setPower(res);
+    });
+  }, []);
+
+  React.useEffect(() => {
     KeyEvent.onKeyUpListener(async () => {
       await readTag();
     });
@@ -34,6 +41,7 @@ export default function App() {
   return (
     <View style={styles.container}>
       <Text>Result: {result}</Text>
+      <Text>Power: {power}</Text>
     </View>
   );
 }
