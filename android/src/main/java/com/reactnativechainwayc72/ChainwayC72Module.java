@@ -13,6 +13,7 @@ import com.facebook.react.bridge.Arguments;
 
 import com.rscja.deviceapi.RFIDWithUHFUART;
 import com.rscja.deviceapi.entity.UHFTAGInfo;
+import com.rscja.deviceapi.interfaces.IUHF;
 import com.rscja.deviceapi.interfaces.ConnectionStatus;
 import com.rscja.deviceapi.exception.ConfigurationException;
 
@@ -151,5 +152,22 @@ public class ChainwayC72Module extends ReactContextBaseJavaModule implements Lif
             promise.reject("POWER_ERROR", ex.getLocalizedMessage());
         }
     }
+
+    @ReactMethod
+    public void writeToEpc(String epc, final Promise promise) {
+        if(epc.length() == (6*4) ) {
+        epc += "00000000";
+
+        Boolean uhfWriteState = mReader.writeData("00000000", IUHF.Bank_EPC, 2, 6, epc);
+
+        if(uhfWriteState)
+            promise.resolve(uhfWriteState);
+        else
+            promise.reject("READER_ERROR", "Can't Write Data");
+        }
+        else {
+            promise.reject("READER_ERROR", "Invalid Data"); 
+        }
+    } 
 
 }
