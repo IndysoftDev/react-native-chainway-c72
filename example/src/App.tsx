@@ -7,6 +7,17 @@ import KeyEvent from 'react-native-keyevent';
 export default function App() {
   const [result, setResult] = React.useState<boolean>();
 
+  const readTag = async () => {
+    try {
+      const tag = await ChainwayC72.readSingleTag();
+      console.log(tag);
+      return tag;
+    } catch {
+      console.log('missed');
+      return;
+    }
+  };
+
   React.useEffect(() => {
     ChainwayC72.initReader().then((res) => {
       console.log(res);
@@ -15,13 +26,8 @@ export default function App() {
   }, []);
 
   React.useEffect(() => {
-    KeyEvent.onKeyDownListener((keyEvent: any) => {
-      console.log(keyEvent);
-    });
-    // if you want to react to keyUp
     KeyEvent.onKeyUpListener(async () => {
-      const tag = await ChainwayC72.readSingleTag();
-      console.log(tag.rssi);
+      await readTag();
     });
   }, []);
 
