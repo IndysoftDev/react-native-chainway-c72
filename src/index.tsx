@@ -20,6 +20,8 @@ type writeToEpc = (newStr: string) => Promise<any>;
 
 type addListener = (cb: (args: any[]) => void) => void;
 
+type removeListener = (cb: (args: any[]) => void) => void;
+
 type startScan = () => Promise<any>;
 
 type stopScan = () => Promise<any>;
@@ -47,8 +49,11 @@ const stopScan: stopScan = () => ChainwayC72.stopScan();
 
 const findTag: findTag = (tag: string) => ChainwayC72.findTag(tag);
 
-const tagListener: addListener = (listener) =>
+const addTagListener: addListener = (listener) =>
   evtEmitter.addListener('UHF_TAG', listener);
+
+const removeTagListener: removeListener = (listener) =>
+  evtEmitter.removeListener('UHF_TAG', listener);
 
 export default {
   initReader,
@@ -61,5 +66,6 @@ export default {
   startScan,
   stopScan,
   findTag,
-  tagListener,
+  addTagListener,
+  removeTagListener,
 };
