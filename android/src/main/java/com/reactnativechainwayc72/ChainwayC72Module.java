@@ -1,6 +1,9 @@
 package com.reactnativechainwayc72;
 
 import androidx.annotation.NonNull;
+import java.util.ArrayList;
+import java.util.List;
+import androidx.annotation.Nullable;
 
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
@@ -10,6 +13,7 @@ import com.facebook.react.module.annotations.ReactModule;
 import com.facebook.react.bridge.LifecycleEventListener;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.bridge.Arguments;
+import com.facebook.react.modules.core.DeviceEventManagerModule;
 
 import com.rscja.deviceapi.RFIDWithUHFUART;
 import com.rscja.deviceapi.entity.UHFTAGInfo;
@@ -23,6 +27,8 @@ public class ChainwayC72Module extends ReactContextBaseJavaModule implements Lif
     private final ReactApplicationContext reactContext;
 
     private RFIDWithUHFUART mReader;
+    private Boolean uhfInventoryStatus = false;
+    private List<WritableMap> scannedTags = new ArrayList<WritableMap>();
 
     public ChainwayC72Module(ReactApplicationContext reactContext) {
         super(reactContext);
@@ -38,6 +44,7 @@ public class ChainwayC72Module extends ReactContextBaseJavaModule implements Lif
 
     @Override
     public void onHostDestroy() {
+        uhfInventoryStatus = false;
         disconnect();
     }
 
@@ -168,6 +175,77 @@ public class ChainwayC72Module extends ReactContextBaseJavaModule implements Lif
             promise.reject("READER_ERROR", ex.getLocalizedMessage()); 
 
         }
-    } 
+    }
 
+    @ReactMethod
+    public void startScan(final Promise promise) {
+        uhfInventoryStatus = mReader.startInventoryTag();
+        new TagThread().start();
+        promise.resolve(uhfInventoryStatus);
+    }
+
+    @ReactMethod
+    public void stopScan(final Promise promise) {
+        uhfInventoryStatus = !(mReader.stopInventory());
+        promise.resolve(scannedTags.size());
+    }
+
+    @ReactMethod
+    public void findTag(final String findEpc, final Promise promise) {
+        uhfInventoryStatus = mReader.startInventoryTag();
+        new TagThread(findEpc).start();
+        promise.resolve(uhfInventoryStatus);
+    }
+
+    private void sendEvent(String eventName, @Nullable WritableMap map) {
+        getReactApplicationContext()
+            .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+            .emit(eventName, map);
+    }
+
+    class TagThread extends Thread {
+
+        String findEpc;
+        public TagThread() {
+            findEpc = "";
+        }
+        public TagThread(String findEpc) {
+            this.findEpc = findEpc;
+        }
+
+        public void run() {
+            String strTid;
+            String strResult;
+            UHFTAGInfo res = null;
+            while (uhfInventoryStatus) {
+                res = mReader.readTagFromBuffer();
+                if (res != null) {
+                    if("".equals(findEpc))
+                        addIfNotExists(res);
+                    else
+                        lostTagOnly(res);
+                }
+            }
+        }
+
+        public void lostTagOnly(UHFTAGInfo tag) {
+            String epc = tag.getEPC(); //mReader.convertUiiToEPC(tag[1]);
+            if(epc.equals(findEpc)) {
+                WritableMap map = Arguments.createMap();
+                map.putString("epc", tag.getEPC());
+                map.putString("rssi", tag.getRssi());
+                sendEvent("UHF_TAG", map);
+            }
+        }
+
+        public void addIfNotExists(UHFTAGInfo tid) {
+            WritableMap map = Arguments.createMap();
+            map.putString("epc", tid.getEPC());
+            map.putString("rssi", tid.getRssi());
+            if(!scannedTags.contains(map)) {
+                scannedTags.add(map);
+                sendEvent("UHF_TAG", map);
+            }
+        }
+    }
 }
