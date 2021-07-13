@@ -155,18 +155,18 @@ public class ChainwayC72Module extends ReactContextBaseJavaModule implements Lif
 
     @ReactMethod
     public void writeToEpc(String epc, final Promise promise) {
-        if(epc.length() == (6*4) ) {
-        epc += "00000000";
+        try {
+            Boolean uhfWriteState = mReader.writeData("00000000", IUHF.Bank_EPC, 2, 6, epc);
 
-        Boolean uhfWriteState = mReader.writeData("00000000", IUHF.Bank_EPC, 2, 6, epc);
+            if(uhfWriteState)
+                promise.resolve(uhfWriteState);
+            else
+                promise.reject("READER_ERROR", "Can't Write Data");
+            
+        } catch (Exception ex) {
 
-        if(uhfWriteState)
-            promise.resolve(uhfWriteState);
-        else
-            promise.reject("READER_ERROR", "Can't Write Data");
-        }
-        else {
-            promise.reject("READER_ERROR", "Invalid Data"); 
+            promise.reject("READER_ERROR", ex.getLocalizedMessage()); 
+
         }
     } 
 
