@@ -99,7 +99,9 @@ export default function App() {
   }, []);
 
   React.useEffect(() => {
-    ChainwayC72.tagListener((tag) => console.log(getProximity(tag)));
+    ChainwayC72.addTagListener((tag) => console.log(getProximity(tag)));
+
+    return () => ChainwayC72.removeTagListener((res) => console.log(res));
   }, []);
 
   React.useEffect(() => {
