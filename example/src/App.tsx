@@ -19,6 +19,16 @@ export default function App() {
     }
   };
 
+  // const writeToTag = async () => {
+  //   try {
+  //     await ChainwayC72.writeToEpc('ee');
+  //     return 'success';
+  //   } catch {
+  //     console.log('missed');
+  //     return;
+  //   }
+  // };
+
   React.useEffect(() => {
     ChainwayC72.initReader().then((res) => {
       console.log(res);
@@ -36,6 +46,8 @@ export default function App() {
     KeyEvent.onKeyUpListener(async () => {
       await readTag();
     });
+
+    return () => KeyEvent.removeKeyUpListener();
   }, []);
 
   return (
