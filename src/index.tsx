@@ -47,6 +47,10 @@ const startScan: startScan = () => ChainwayC72.startScan();
 
 const stopScan: stopScan = () => ChainwayC72.stopScan();
 
+const startBarcodeScan: startScan = () => ChainwayC72.barcodeRead();
+
+const stopBarcodeScan: stopScan = () => ChainwayC72.barcodeCancel();
+
 const findTag: findTag = (tag: string) => ChainwayC72.findTag(tag);
 
 const addTagListener: addListener = (listener) =>
@@ -54,6 +58,12 @@ const addTagListener: addListener = (listener) =>
 
 const removeTagListener: removeListener = (listener) =>
   evtEmitter.removeListener('UHF_TAG', listener);
+
+const addBarcodeListener: addListener = (listener) =>
+  evtEmitter.addListener('BARCODE', listener);
+
+const removeBarcodeListener: removeListener = (listener) =>
+  evtEmitter.removeListener('BARCODE', listener);
 
 export default {
   initReader,
@@ -68,4 +78,8 @@ export default {
   findTag,
   addTagListener,
   removeTagListener,
+  addBarcodeListener,
+  removeBarcodeListener,
+  startBarcodeScan,
+  stopBarcodeScan,
 };

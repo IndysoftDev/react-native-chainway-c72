@@ -4,6 +4,10 @@ import androidx.annotation.NonNull;
 import java.util.ArrayList;
 import java.util.List;
 import androidx.annotation.Nullable;
+import android.content.BroadcastReceiver;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.Context;
 
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
@@ -20,6 +24,10 @@ import com.rscja.deviceapi.entity.UHFTAGInfo;
 import com.rscja.deviceapi.interfaces.IUHF;
 import com.rscja.deviceapi.interfaces.ConnectionStatus;
 import com.rscja.deviceapi.exception.ConfigurationException;
+import com.barcode.BarcodeUtility;
+import com.zebra.adc.decoder.Barcode2DWithSoft;
+
+
 
 @ReactModule(name = ChainwayC72Module.NAME)
 public class ChainwayC72Module extends ReactContextBaseJavaModule implements LifecycleEventListener {
@@ -29,6 +37,8 @@ public class ChainwayC72Module extends ReactContextBaseJavaModule implements Lif
     private RFIDWithUHFUART mReader;
     private Boolean uhfInventoryStatus = false;
     private List<WritableMap> scannedTags = new ArrayList<WritableMap>();
+    private static BarcodeUtility barcodeUtility = null;
+    private static BarcodeDataReceiver barcodeDataReceiver = null;
 
     public ChainwayC72Module(ReactApplicationContext reactContext) {
         super(reactContext);
@@ -68,6 +78,29 @@ public class ChainwayC72Module extends ReactContextBaseJavaModule implements Lif
             }
 
             mReader.init();
+
+            //Barcode
+            if (barcodeUtility == null) {
+                barcodeUtility = BarcodeUtility.getInstance();
+            }
+
+            barcodeUtility.setOutputMode(this.reactContext, 2);// Broadcast receive data
+            barcodeUtility.setScanResultBroadcast(this.reactContext, "com.scanner.broadcast", "data"); //Set Broadcast
+            barcodeUtility.open(this.reactContext, BarcodeUtility.ModuleType.BARCODE_2D);
+            barcodeUtility.setReleaseScan(this.reactContext, false);
+            barcodeUtility.setScanFailureBroadcast(this.reactContext, true);
+            barcodeUtility.enableContinuousScan(this.reactContext, false);
+            barcodeUtility.enablePlayFailureSound(this.reactContext, false);
+            barcodeUtility.enablePlaySuccessSound(this.reactContext, false);
+            barcodeUtility.enableEnter(this.reactContext, false);
+            barcodeUtility.setBarcodeEncodingFormat(this.reactContext, 1);
+
+            if (barcodeDataReceiver == null) {
+                barcodeDataReceiver = new BarcodeDataReceiver();
+                IntentFilter intentFilter = new IntentFilter();
+                intentFilter.addAction("com.scanner.broadcast");
+                this.reactContext.registerReceiver(barcodeDataReceiver, intentFilter);
+            }
             
         } catch (ConfigurationException e) {
             e.printStackTrace();
@@ -78,6 +111,16 @@ public class ChainwayC72Module extends ReactContextBaseJavaModule implements Lif
         if (mReader != null) {
             mReader.free();
             mReader = null;
+        }
+
+        if (barcodeUtility != null) {
+            barcodeUtility.close(this.reactContext, BarcodeUtility.ModuleType.BARCODE_2D);
+            barcodeUtility = null;
+        }
+
+        if (barcodeDataReceiver != null) {
+            this.reactContext.unregisterReceiver(barcodeDataReceiver);
+            barcodeDataReceiver = null;
         }
     }
 
@@ -109,6 +152,33 @@ public class ChainwayC72Module extends ReactContextBaseJavaModule implements Lif
             } else {
                 promise.resolve(false);
             }
+        } catch (Exception err) {
+            promise.reject(err);
+        }
+    }
+
+    @ReactMethod
+    public void barcodeRead(Promise promise) {
+        
+         try {
+            if (barcodeUtility != null) {
+                barcodeUtility.startScan(this.reactContext, BarcodeUtility.ModuleType.BARCODE_2D);
+                promise.resolve(true);
+            }
+            promise.resolve(false);
+        } catch (Exception err) {
+            promise.reject(err);
+        }
+    }
+
+    @ReactMethod
+    public void barcodeCancel(Promise promise) {
+        try {
+            if (barcodeUtility != null) {
+                barcodeUtility.stopScan(this.reactContext, BarcodeUtility.ModuleType.BARCODE_2D);
+                promise.resolve(true);
+            }
+            promise.resolve(false);
         } catch (Exception err) {
             promise.reject(err);
         }
@@ -203,6 +273,12 @@ public class ChainwayC72Module extends ReactContextBaseJavaModule implements Lif
             .emit(eventName, map);
     }
 
+    private void sendEvent(String eventName, String msg) {
+         getReactApplicationContext()
+            .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+            .emit(eventName, msg);
+    }
+
     class TagThread extends Thread {
 
         String findEpc;
@@ -245,6 +321,20 @@ public class ChainwayC72Module extends ReactContextBaseJavaModule implements Lif
             if(!scannedTags.contains(map)) {
                 scannedTags.add(map);
                 sendEvent("UHF_TAG", map);
+            }
+        }
+    }
+
+    class BarcodeDataReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String barCode = intent.getStringExtra("data");
+            String status = intent.getStringExtra("SCAN_STATE");
+
+            if (status != null && (status.equals("cancel") || status.equals("failure"))) {
+                return;
+            } else {
+                sendEvent("BARCODE", barCode);
             }
         }
     }

@@ -6,9 +6,7 @@ import KeyEvent from 'react-native-keyevent';
 let lastPress = 0;
 
 export default function App() {
-  const timerRef = React.useRef(null);
   const [result, setResult] = React.useState();
-  const [power, setPower] = React.useState();
 
   // const readTag = async () => {
   //   try {
@@ -29,27 +27,23 @@ export default function App() {
   }, []);
 
   React.useEffect(() => {
-    ChainwayC72.readPower().then((res) => {
-      setPower(res);
-    });
+    ChainwayC72.addBarcodeListener((bc) => console.log(bc));
+
+    return () => ChainwayC72.removeBarcodeListener();
   }, []);
 
   React.useEffect(() => {
-    KeyEvent.onKeyDownListener(() => {
-      const time = new Date().getTime();
-      const delta = time - lastPress;
-      const DOUBLE_PRESS_DELAY = 300;
-      lastPress = time;
-      if (delta < DOUBLE_PRESS_DELAY) {
-        if (timerRef.current) {
-          clearTimeout(timerRef.current);
-          console.log('double');
-        }
-        return;
-      }
-      timerRef.current = setTimeout(() => {
-        console.log('single');
-      }, 300);
+    KeyEvent.onKeyUpListener(async () => {
+      await ChainwayC72.startBarcodeScan();
+      return;
+    });
+
+    return () => KeyEvent.removeKeyUpListener();
+  }, []);
+
+  React.useEffect(() => {
+    KeyEvent.onKeyDownListener(async () => {
+      await ChainwayC72.stopBarcodeScan();
       return;
     });
 
@@ -59,7 +53,6 @@ export default function App() {
   return (
     <View style={styles.container}>
       <Text>Result: {result}</Text>
-      <Text>Power: {power}</Text>
     </View>
   );
 }
