@@ -90,8 +90,8 @@ public class ChainwayC72Module extends ReactContextBaseJavaModule implements Lif
             barcodeUtility.setReleaseScan(this.reactContext, false);
             barcodeUtility.setScanFailureBroadcast(this.reactContext, true);
             barcodeUtility.enableContinuousScan(this.reactContext, false);
-            barcodeUtility.enablePlayFailureSound(this.reactContext, false);
-            barcodeUtility.enablePlaySuccessSound(this.reactContext, false);
+            barcodeUtility.enablePlayFailureSound(this.reactContext, true);
+            barcodeUtility.enablePlaySuccessSound(this.reactContext, true);
             barcodeUtility.enableEnter(this.reactContext, false);
             barcodeUtility.setBarcodeEncodingFormat(this.reactContext, 1);
 
