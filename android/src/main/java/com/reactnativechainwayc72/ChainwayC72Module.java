@@ -256,7 +256,7 @@ public class ChainwayC72Module extends ReactContextBaseJavaModule implements Lif
 
     @ReactMethod
     public void stopScan(final Promise promise) {
-        uhfInventoryStatus = !(mReader.stopInventory());
+        mReader.stopInventory();
         promise.resolve(scannedTags.size());
     }
 
