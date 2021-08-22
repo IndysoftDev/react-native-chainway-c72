@@ -27,14 +27,14 @@ export default function App() {
   }, []);
 
   React.useEffect(() => {
-    ChainwayC72.addBarcodeListener((bc) => console.log(bc));
+    ChainwayC72.addTagListener((bc) => console.log(bc));
 
-    return () => ChainwayC72.removeBarcodeListener();
+    return () => ChainwayC72.removeTagListener();
   }, []);
 
   React.useEffect(() => {
     KeyEvent.onKeyUpListener(async () => {
-      await ChainwayC72.startBarcodeScan();
+      await ChainwayC72.stopScan();
       return;
     });
 
@@ -43,11 +43,11 @@ export default function App() {
 
   React.useEffect(() => {
     KeyEvent.onKeyDownListener(async () => {
-      await ChainwayC72.stopBarcodeScan();
+      await ChainwayC72.startScan();
       return;
     });
 
-    return () => KeyEvent.removeKeyMultipleListener();
+    return () => KeyEvent.removeKeyDownListener();
   }, []);
 
   return (
