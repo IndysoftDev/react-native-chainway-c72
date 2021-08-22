@@ -36,7 +36,7 @@ public class ChainwayC72Module extends ReactContextBaseJavaModule implements Lif
 
     private RFIDWithUHFUART mReader;
     private Boolean uhfInventoryStatus = false;
-    private List<WritableMap> scannedTags = new ArrayList<WritableMap>();
+    private List<String> scannedTags = new ArrayList<>();
     private static BarcodeUtility barcodeUtility = null;
     private static BarcodeDataReceiver barcodeDataReceiver = null;
 
@@ -256,6 +256,7 @@ public class ChainwayC72Module extends ReactContextBaseJavaModule implements Lif
 
     @ReactMethod
     public void stopScan(final Promise promise) {
+        uhfInventoryStatus = false;
         mReader.stopInventory();
         promise.resolve(scannedTags.size());
     }
@@ -265,6 +266,12 @@ public class ChainwayC72Module extends ReactContextBaseJavaModule implements Lif
         uhfInventoryStatus = mReader.startInventoryTag();
         new TagThread(findEpc).start();
         promise.resolve(uhfInventoryStatus);
+    }
+
+    @ReactMethod
+    public void clearTags(final Promise promise) {
+        scannedTags.clear();
+        promise.resolve(true);
     }
 
     private void sendEvent(String eventName, @Nullable WritableMap map) {
@@ -315,12 +322,10 @@ public class ChainwayC72Module extends ReactContextBaseJavaModule implements Lif
         }
 
         public void addIfNotExists(UHFTAGInfo tid) {
-            WritableMap map = Arguments.createMap();
             map.putString("epc", tid.getEPC());
-            map.putString("rssi", tid.getRssi());
-            if(!scannedTags.contains(map)) {
-                scannedTags.add(map);
-                sendEvent("UHF_TAG", map);
+            if(!scannedTags.contains(tid.getEPC())) {
+                scannedTags.add(tid.getEPC());
+                sendEvent("UHF_TAG", tid.getEPC());
             }
         }
     }
