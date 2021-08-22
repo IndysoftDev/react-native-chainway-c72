@@ -322,7 +322,6 @@ public class ChainwayC72Module extends ReactContextBaseJavaModule implements Lif
         }
 
         public void addIfNotExists(UHFTAGInfo tid) {
-            map.putString("epc", tid.getEPC());
             if(!scannedTags.contains(tid.getEPC())) {
                 scannedTags.add(tid.getEPC());
                 sendEvent("UHF_TAG", tid.getEPC());
