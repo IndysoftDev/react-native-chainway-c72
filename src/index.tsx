@@ -28,6 +28,8 @@ type stopScan = () => Promise<any>;
 
 type findTag = (tag: string) => Promise<any>;
 
+type clearTagCache = () => Promise<any>;
+
 const initReader: initReader = () => ChainwayC72.initReader();
 
 const deinitReader: deinitReader = () => ChainwayC72.deinitReader();
@@ -65,6 +67,8 @@ const addBarcodeListener: addListener = (listener) =>
 const removeBarcodeListener: removeListener = (listener) =>
   evtEmitter.removeListener('BARCODE', listener);
 
+const clearTagCache: clearTagCache = () => ChainwayC72.clearTags();
+
 export default {
   initReader,
   deinitReader,
@@ -82,4 +86,5 @@ export default {
   removeBarcodeListener,
   startBarcodeScan,
   stopBarcodeScan,
+  clearTagCache,
 };
