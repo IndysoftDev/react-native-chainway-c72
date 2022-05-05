@@ -1,4 +1,4 @@
-package com.reactnativechainwayc72;
+package com.indytrack;
 
 import androidx.annotation.NonNull;
 import java.util.ArrayList;
@@ -8,6 +8,11 @@ import android.content.BroadcastReceiver;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.Context;
+import android.os.Build;
+
+import java.util.Map;
+import java.util.HashMap;
+import java.util.UUID;
 
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
@@ -26,8 +31,7 @@ import com.rscja.deviceapi.interfaces.ConnectionStatus;
 import com.rscja.deviceapi.exception.ConfigurationException;
 import com.barcode.BarcodeUtility;
 import com.zebra.adc.decoder.Barcode2DWithSoft;
-
-
+import com.rscja.deviceapi.RFIDWithUHF.BankEnum;
 
 @ReactModule(name = ChainwayC72Module.NAME)
 public class ChainwayC72Module extends ReactContextBaseJavaModule implements LifecycleEventListener {
@@ -72,24 +76,24 @@ public class ChainwayC72Module extends ReactContextBaseJavaModule implements Lif
                 disconnect();
             }
 
-            //RFID
+            // RFID
             if (mReader == null) {
                 mReader = RFIDWithUHFUART.getInstance();
             }
 
             mReader.init();
-
-            //Barcode
+            mReader.setEPCAndTIDUserMode(0, 8);
+            // Barcode
             if (barcodeUtility == null) {
                 barcodeUtility = BarcodeUtility.getInstance();
             }
 
             barcodeUtility.setOutputMode(this.reactContext, 2);// Broadcast receive data
-            barcodeUtility.setScanResultBroadcast(this.reactContext, "com.scanner.broadcast", "data"); //Set Broadcast
+            barcodeUtility.setScanResultBroadcast(this.reactContext, "com.scanner.broadcast", "data"); // Set Broadcast
             barcodeUtility.open(this.reactContext, BarcodeUtility.ModuleType.BARCODE_2D);
-            barcodeUtility.setReleaseScan(this.reactContext, false);
-            barcodeUtility.setScanFailureBroadcast(this.reactContext, true);
-            barcodeUtility.enableContinuousScan(this.reactContext, false);
+            barcodeUtility.setReleaseScan(this.reactContext, true);
+            barcodeUtility.setScanFailureBroadcast(this.reactContext, false);
+            barcodeUtility.enableContinuousScan(this.reactContext, true);
             barcodeUtility.enablePlayFailureSound(this.reactContext, true);
             barcodeUtility.enablePlaySuccessSound(this.reactContext, true);
             barcodeUtility.enableEnter(this.reactContext, false);
@@ -101,7 +105,7 @@ public class ChainwayC72Module extends ReactContextBaseJavaModule implements Lif
                 intentFilter.addAction("com.scanner.broadcast");
                 this.reactContext.registerReceiver(barcodeDataReceiver, intentFilter);
             }
-            
+
         } catch (ConfigurationException e) {
             e.printStackTrace();
         }
@@ -130,7 +134,7 @@ public class ChainwayC72Module extends ReactContextBaseJavaModule implements Lif
             connect();
             promise.resolve(true);
         } catch (Exception err) {
-            promise.reject(err);
+            promise.reject(err.getLocalizedMessage());
         }
     }
 
@@ -140,7 +144,28 @@ public class ChainwayC72Module extends ReactContextBaseJavaModule implements Lif
             disconnect();
             promise.resolve(true);
         } catch (Exception err) {
-            promise.reject(err);
+            promise.reject(err.getLocalizedMessage());
+        }
+    }
+
+    @ReactMethod
+    public void getDeviceModel(Promise promise) {
+        String model = Build.MODEL;
+        try {
+            promise.resolve(model);
+        } catch (Exception err) {
+            promise.reject(err.getLocalizedMessage());
+        }
+    }
+
+    @ReactMethod
+    public void createUUID(Promise promise) {
+        try {
+            UUID uuid = UUID.randomUUID();
+            String uuidString = uuid.toString();
+            promise.resolve(uuidString);
+        } catch (Exception err) {
+            promise.reject(err.getLocalizedMessage());
         }
     }
 
@@ -153,21 +178,21 @@ public class ChainwayC72Module extends ReactContextBaseJavaModule implements Lif
                 promise.resolve(false);
             }
         } catch (Exception err) {
-            promise.reject(err);
+            promise.reject(err.getLocalizedMessage());
         }
     }
 
     @ReactMethod
     public void barcodeRead(Promise promise) {
-        
-         try {
+
+        try {
             if (barcodeUtility != null) {
                 barcodeUtility.startScan(this.reactContext, BarcodeUtility.ModuleType.BARCODE_2D);
                 promise.resolve(true);
             }
             promise.resolve(false);
         } catch (Exception err) {
-            promise.reject(err);
+            promise.reject(err.getLocalizedMessage());
         }
     }
 
@@ -180,8 +205,17 @@ public class ChainwayC72Module extends ReactContextBaseJavaModule implements Lif
             }
             promise.resolve(false);
         } catch (Exception err) {
-            promise.reject(err);
+            promise.reject(err.getLocalizedMessage());
         }
+    }
+
+    private WritableMap createTagMap(UHFTAGInfo tag) {
+        WritableMap map = Arguments.createMap();
+        map.putString("epc", tag.getEPC());
+        map.putString("tid", tag.getTid());
+        map.putString("rssi", tag.getRssi());
+        map.putString("user", tag.getUser());
+        return map;
     }
 
     @ReactMethod
@@ -189,11 +223,10 @@ public class ChainwayC72Module extends ReactContextBaseJavaModule implements Lif
         try {
             UHFTAGInfo tag = mReader.inventorySingleTag();
 
-            if(tag != null) {
-                WritableMap map = Arguments.createMap();
-                map.putString("epc", tag.getEPC());
-                map.putString("rssi", tag.getRssi());
-                promise.resolve(map);
+            if (tag != null) {
+                WritableMap map = createTagMap(tag);
+                sendEvent("UHF_TAG", map);
+                promise.resolve(true);
             } else {
                 promise.reject("READ_ERROR", "READ FAILED");
             }
@@ -207,7 +240,7 @@ public class ChainwayC72Module extends ReactContextBaseJavaModule implements Lif
     public void readPower(final Promise promise) {
         try {
             int uhfPower = mReader.getPower();
-            if(uhfPower>=0) {
+            if (uhfPower >= 0) {
                 promise.resolve(uhfPower);
             } else {
                 promise.reject("POWER_ERROR", "INVALID POWER VALUE");
@@ -221,7 +254,7 @@ public class ChainwayC72Module extends ReactContextBaseJavaModule implements Lif
     public void setPower(int powerValue, final Promise promise) {
         try {
             Boolean uhfPowerState = mReader.setPower(powerValue);
-            if(uhfPowerState)
+            if (uhfPowerState)
                 promise.resolve(uhfPowerState);
             else
                 promise.reject("POWER_ERROR", "Can't Change Power");
@@ -230,19 +263,44 @@ public class ChainwayC72Module extends ReactContextBaseJavaModule implements Lif
         }
     }
 
-    @ReactMethod
-    public void writeToEpc(String epc, final Promise promise) {
-        try {
-            Boolean uhfWriteState = mReader.writeData("00000000", IUHF.Bank_EPC, 2, 6, epc);
+    private int getTargetBank(int target) {
+        int Bank;
+        switch (target) {
+            case 0:
+                Bank = IUHF.Bank_EPC;
+                break;
+            case 1:
+                Bank = IUHF.Bank_USER;
+                break;
+            default:
+                Bank = IUHF.Bank_EPC;
+                break;
+        }
+        return Bank;
+    }
 
-            if(uhfWriteState)
+    @ReactMethod
+    public void writeToEPC(
+            String targetTID,
+            int targetBank,
+            int startAddress,
+            String newData,
+            final Promise promise) {
+
+        try {
+            String accessPwd = "00000000";
+            int targetTIDLength = targetTID.length();
+            Boolean uhfWriteState = mReader.writeData(accessPwd, IUHF.Bank_TID, 0, targetTIDLength, targetTID,
+                    IUHF.Bank_EPC, 2, newData.length(), newData);
+
+            if (uhfWriteState)
                 promise.resolve(uhfWriteState);
             else
                 promise.reject("READER_ERROR", "Can't Write Data");
-            
+
         } catch (Exception ex) {
 
-            promise.reject("READER_ERROR", ex.getLocalizedMessage()); 
+            promise.reject("READER_ERROR", ex.getLocalizedMessage());
 
         }
     }
@@ -276,22 +334,30 @@ public class ChainwayC72Module extends ReactContextBaseJavaModule implements Lif
 
     private void sendEvent(String eventName, @Nullable WritableMap map) {
         getReactApplicationContext()
-            .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
-            .emit(eventName, map);
+                .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+                .emit(eventName, map);
     }
 
     private void sendEvent(String eventName, String msg) {
-         getReactApplicationContext()
-            .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
-            .emit(eventName, msg);
+        getReactApplicationContext()
+                .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+                .emit(eventName, msg);
+    }
+
+    private void sendEvent(String eventName, Boolean msg) {
+        getReactApplicationContext()
+                .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+                .emit(eventName, msg);
     }
 
     class TagThread extends Thread {
 
         String findEpc;
+
         public TagThread() {
             findEpc = "";
         }
+
         public TagThread(String findEpc) {
             this.findEpc = findEpc;
         }
@@ -303,7 +369,7 @@ public class ChainwayC72Module extends ReactContextBaseJavaModule implements Lif
             while (uhfInventoryStatus) {
                 res = mReader.readTagFromBuffer();
                 if (res != null) {
-                    if("".equals(findEpc))
+                    if ("".equals(findEpc))
                         addIfNotExists(res);
                     else
                         lostTagOnly(res);
@@ -312,19 +378,17 @@ public class ChainwayC72Module extends ReactContextBaseJavaModule implements Lif
         }
 
         public void lostTagOnly(UHFTAGInfo tag) {
-            String epc = tag.getEPC(); //mReader.convertUiiToEPC(tag[1]);
-            if(epc.equals(findEpc)) {
-                WritableMap map = Arguments.createMap();
-                map.putString("epc", tag.getEPC());
-                map.putString("rssi", tag.getRssi());
+            String epc = tag.getEPC(); // mReader.convertUiiToEPC(tag[1]);
+            if (epc.equals(findEpc)) {
+                WritableMap map = createTagMap(tag);
                 sendEvent("UHF_TAG", map);
             }
         }
 
-        public void addIfNotExists(UHFTAGInfo tid) {
-            if(!scannedTags.contains(tid.getEPC())) {
-                scannedTags.add(tid.getEPC());
-                sendEvent("UHF_TAG", tid.getEPC());
+        public void addIfNotExists(UHFTAGInfo tag) {
+            if (!scannedTags.contains(tag.getEPC())) {
+                WritableMap map = createTagMap(tag);
+                sendEvent("UHF_TAG", map);
             }
         }
     }
@@ -336,9 +400,13 @@ public class ChainwayC72Module extends ReactContextBaseJavaModule implements Lif
             String status = intent.getStringExtra("SCAN_STATE");
 
             if (status != null && (status.equals("cancel") || status.equals("failure"))) {
-                return;
+                sendEvent("BARCODE", false);
             } else {
-                sendEvent("BARCODE", barCode);
+                if (barCode.length() == 0) {
+                    sendEvent("BARCODE", false);
+                } else {
+                    sendEvent("BARCODE", barCode);
+                }
             }
         }
     }

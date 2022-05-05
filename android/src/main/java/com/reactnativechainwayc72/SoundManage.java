@@ -4,9 +4,7 @@ import android.media.AudioManager;
 import android.media.SoundPool;
 
 
-/**
- * Created by zhoupin on 2016/6/3 0003.
- */
+
 public class SoundManage {
 
     private  static int successID=-1;
